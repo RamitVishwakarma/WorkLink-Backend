@@ -3,7 +3,7 @@ const router = express.Router();
 const { z } = require("zod");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const StartUp = require("../../models/startup");
+const StartUp = require("../../models/Startup");
 
 // Signup route
 router.post("/signup", async (req, res) => {
