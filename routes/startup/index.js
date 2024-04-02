@@ -18,8 +18,10 @@ router.post("/signup", async (req, res) => {
       profilePicture,
     } = req.body;
 
-    const existingWorker = await Worker.findOne({ companyEmail: companyEmail });
-    if (existingWorker) {
+    const existingStartup = await StartUp.findOne({
+      companyEmail: companyEmail,
+    });
+    if (existingStartup) {
       return res.status(409).send("startup already exists");
     }
     //creates a schema to validate
@@ -64,7 +66,7 @@ router.post("/signup", async (req, res) => {
 });
 
 // Signin route
-router.post("/signin", (req, res) => {
+router.post("/signin", async (req, res) => {
   // Implement your signin logic here
   try {
     const { companyEmail, password } = req.body;
@@ -79,12 +81,13 @@ router.post("/signin", (req, res) => {
       return res.status(400).send("Invalid Data provided");
     }
     //Checking for valid password
-    const validStartup = StartUp.findOne({ companyEmail: companyEmail });
+    const validStartup = await StartUp.findOne({ companyEmail: companyEmail });
     if (!validStartup) {
       return res.status(404).send("Startup not found");
     }
     //Checking for valid password and signing in
     if (bcrypt.compareSync(password, validStartup.password)) {
+      console.log("Here");
       const token = jwt.sign(
         { id: validStartup._id },
         process.env.JWT_SECRET_STARTUP,
@@ -92,6 +95,7 @@ router.post("/signin", (req, res) => {
           expiresIn: "30d",
         }
       );
+      console.log(" error Here");
       res.header("Authorization", `Bearer ${token}`);
       res.header("Access-Control-Expose-Headers", "Authorization");
       res.status(200).json({

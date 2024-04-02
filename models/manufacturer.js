@@ -17,19 +17,27 @@ const manufacturerSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  machines: {
-    name: {
+  machines: [
+    {
+      name: {
+        type: String,
+        required: true,
+      },
+      isAvailable: {
+        type: Boolean,
+        default: true,
+      },
+    },
+  ],
+  location: {
+    city: {
       type: String,
       required: true,
     },
-    isAvailable: {
-      type: Boolean,
-      default: true,
+    state: {
+      type: String,
+      required: true,
     },
-  },
-  location: {
-    type: String,
-    required: true,
   },
   profilePicture: {
     type: String,

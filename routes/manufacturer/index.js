@@ -1,17 +1,128 @@
 const express = require("express");
 const router = express.Router();
+const { z } = require("zod");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const Manufacturer = require("../../models/manufacturer");
 
 // Signup route
-router.post("/signup", (req, res) => {
+router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-  } catch {}
-  // Implement your signup logic here
+    // stores the data from the request body
+    const {
+      companyName,
+      companyEmail,
+      password,
+      workSector,
+      machines,
+      location,
+      profilePicture,
+    } = req.body;
+
+    const existingManufacturer = await Manufacturer.findOne({
+      companyEmail: companyEmail,
+    });
+    if (existingManufacturer) {
+      return res.status(409).send("Manufacturer already exists");
+    }
+    //creates a schema to validate
+    const manufacturerSchema = z.object({
+      companyName: z.string().min(1),
+      companyEmail: z.string().email(),
+      password: z.string().min(6),
+      workSector: z.string().min(1),
+      machines: z.array(
+        z.object({
+          name: z.string().min(1),
+          isAvailable: z.boolean().default(true),
+        })
+      ),
+      location: z.object({
+        city: z.string().min(1),
+        state: z.string().min(1),
+      }),
+    });
+    // validate the data
+    const validatedData = manufacturerSchema.safeParse({
+      companyName,
+      companyEmail,
+      password,
+      workSector,
+      machines,
+      location,
+    });
+    // check if the data is valid
+    if (validatedData.success) {
+      //Save data to db hash pwd
+      const hashedpassword = bcrypt.hashSync(password, 10);
+      const newManufacturer = new Manufacturer({
+        companyName,
+        companyEmail,
+        password: hashedpassword,
+        workSector,
+        machines,
+        location,
+        profilePicture,
+      });
+      await newManufacturer.save();
+      res.status(201).send("Manufacturer SignUp successfull");
+    } else {
+      res.status(400).send("Error validating data");
+    }
+  } catch {
+    res.status(500).send("Something went down with server");
+  }
 });
 
 // Signin route
-router.post("/signin", (req, res) => {
+router.post("/signin", async (req, res) => {
   // Implement your signin logic here
+  try {
+    const { companyEmail, password } = req.body;
+    const emailschema = z.string().email();
+    //Checking for valid data
+    const emailValidation = emailschema.safeParse(companyEmail);
+    if (!emailValidation.success) {
+      return res.status(400).send("Invalid email");
+    }
+    //Checking for valid email
+    if (companyEmail === undefined || password === undefined) {
+      return res.status(400).send("Invalid Data provided");
+    }
+    //Checking for valid password
+    const validManufacturer = await Manufacturer.findOne({
+      companyEmail: companyEmail,
+    });
+    if (!validManufacturer) {
+      return res.status(404).send("Manufacturer not found");
+    }
+    //Checking for valid password and signing in
+    if (bcrypt.compareSync(password, validManufacturer.password)) {
+      const token = jwt.sign(
+        { id: validManufacturer._id },
+        process.env.JWT_SECRET_Manufacturer,
+        {
+          expiresIn: "30d",
+        }
+      );
+      res.header("Authorization", `Bearer ${token}`);
+      res.header("Access-Control-Expose-Headers", "Authorization");
+      res.status(200).json({
+        Manufacturer: {
+          companyName: validManufacturer.companyName,
+          companyEmail: validManufacturer.companyEmail,
+          workSector: validManufacturer.workSector,
+          location: validManufacturer.location,
+          machines: validManufacturer.machines,
+          profilePicture: validManufacturer.profilePicture,
+        },
+      });
+    } else {
+      res.status(401).send("Invalid password");
+    }
+  } catch {
+    res.status(500).send("Something went down with server");
+  }
 });
 
 module.exports = router;
