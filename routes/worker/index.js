@@ -80,10 +80,13 @@ router.post("/signin", async (req, res) => {
     if (bcrypt.compareSync(password, validWorker.password)) {
       //signin the data with the secret
       console.log(validWorker._id);
-      const token = jwt.sign({ id: validWorker._id }, process.env.JWT_SECRET, {
-        expiresIn: "30d",
-      });
-      console.log(token);
+      const token = jwt.sign(
+        { id: validWorker._id },
+        process.env.JWT_SECRET_WORKER,
+        {
+          expiresIn: "30d",
+        }
+      );
       //send the token to the user
       res.header("Authorization", `Bearer ${token}`);
       res.header("Access-Control-Expose-Headers", "Authorization");
