@@ -13,6 +13,7 @@ connectdb(DATABASE_URL);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
 const homeRoute = require("./routes/index.js");
 app.use("/", homeRoute);
