@@ -82,7 +82,7 @@ router.post("/signin", async (req, res) => {
       console.log(validWorker._id);
       const token = jwt.sign(
         { id: validWorker._id },
-        process.env.JWT_SECRET_WORKER,
+        process.env.JWT_SECRET_MANUFACTURER,
         {
           expiresIn: "30d",
         }
