@@ -65,6 +65,19 @@ router.post("/signup", async (req, res) => {
         profilePicture,
       });
       await newManufacturer.save();
+      const manufacturer = await Manufacturer.findOne({
+        companyEmail: companyEmail,
+      });
+      // create token
+      const token = jwt.sign(
+        { id: manufacturer._id },
+        process.env.JWT_SECRET_MANUFACTURER,
+        {
+          expiresIn: "30d",
+        }
+      );
+      res.header("Authorization", `Bearer ${token}`);
+      res.header("Access-Control-Expose-Headers", "Authorization");
       res.status(201).send("Manufacturer SignUp successfull");
     } else {
       res.status(400).send("Error validating data");

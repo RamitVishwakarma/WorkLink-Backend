@@ -48,6 +48,19 @@ router.post("/signup", async (req, res) => {
         profilePicture,
       });
       await newWorker.save();
+      const worker = await Worker.findOne({
+        email: email,
+      });
+      // create token
+      const token = jwt.sign(
+        { id: worker._id },
+        process.env.JWT_SECRET_WORKER,
+        {
+          expiresIn: "30d",
+        }
+      );
+      res.header("Authorization", `Bearer ${token}`);
+      res.header("Access-Control-Expose-Headers", "Authorization");
       res.status(201).send("SignUp successfull");
     } else {
       res.status(400).send("Error validating data");
