@@ -11,7 +11,6 @@ router.post("/signup", async (req, res) => {
     // stores the data from the request body
     const { name, email, password, skills, location, profilePicture } =
       req.body;
-
     const existingWorker = await Worker.findOne({ email: email });
     if (existingWorker) {
       return res.status(409).json({ message: "Worker already exists" });
@@ -65,6 +64,13 @@ router.post("/signup", async (req, res) => {
       res.status(201).json({
         token: `Bearer ${token}`,
         message: "Worker SignUp successfull",
+        Worker: {
+          name: worker.name,
+          email: worker.email,
+          skills: worker.skills,
+          location: worker.location,
+          profilePicture: worker.profilePicture,
+        },
       });
     } else {
       res.status(400).json({ message: "Error validating data" });

@@ -82,6 +82,13 @@ router.post("/signup", async (req, res) => {
       res.status(201).json({
         token: `Bearer ${token}`,
         message: "Manufacturer SignUp successfull",
+        Manufacturer: {
+          companyName: manufacturer.companyName,
+          companyEmail: manufacturer.companyEmail,
+          workSector: manufacturer.workSector,
+          location: manufacturer.location,
+          profilePicture: manufacturer.profilePicture,
+        },
       });
       res.status(201).json({ message: "Manufacturer SignUp successfull" });
     } else {

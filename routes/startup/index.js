@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const StartUp = require("../../models/Startup");
 const Gig = require("../../models/gig");
+const Startup = require("../../models/Startup");
 
 // Signup route
 router.post("/signup", async (req, res) => {
@@ -73,6 +74,13 @@ router.post("/signup", async (req, res) => {
       res.status(201).json({
         token: `Bearer ${token}`,
         message: "Startup SignUp successfull",
+        Startup: {
+          companyName: startup.companyName,
+          companyEmail: startup.companyEmail,
+          workSector: startup.workSector,
+          location: startup.location,
+          profilePicture: startup.profilePicture,
+        },
       });
       res.status(201).json({ message: "Startup SignUp successfull" });
     } else {
