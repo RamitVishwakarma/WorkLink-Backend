@@ -59,9 +59,12 @@ router.post("/signup", async (req, res) => {
           expiresIn: "30d",
         }
       );
-      res.header("Authorization", `Bearer ${token}`);
-      res.header("Access-Control-Expose-Headers", "Authorization");
-      res.status(201).send("SignUp successfull");
+
+      // res.header("Authorization", `Bearer ${token}`);
+      // res.header("Access-Control-Expose-Headers", "Authorization");
+      res.status(201).json({
+        token: `Bearer ${token}`,
+      });
     } else {
       res.status(400).send("Error validating data");
     }
