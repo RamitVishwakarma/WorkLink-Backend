@@ -143,7 +143,8 @@ router.post("/signin", async (req, res) => {
 
 router.post("/createGig", async (req, res) => {
   try {
-    const { location, skillsRequired, pay, description } = req.body;
+    const { location, skillsRequired, pay, description, workerLimit } =
+      req.body;
 
     const token = req.header("Authorization");
 
@@ -157,6 +158,7 @@ router.post("/createGig", async (req, res) => {
       skillsRequired: z.array(z.string().min(1)),
       pay: z.number().int(),
       description: z.string().min(1),
+      workerLimit: z.number().int(),
     });
 
     jwt.verify(
@@ -177,6 +179,7 @@ router.post("/createGig", async (req, res) => {
               skillsRequired,
               pay,
               description,
+              workerLimit,
             });
             if (validatedData.success) {
               const newGig = new Gig({
@@ -185,6 +188,7 @@ router.post("/createGig", async (req, res) => {
                 skillsRequired,
                 pay,
                 description,
+                workerLimit,
               });
               await newGig.save();
               const getGigId = await Gig.findOne({

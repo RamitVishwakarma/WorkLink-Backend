@@ -27,6 +27,10 @@ const manufacturerSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
       },
+      price: {
+        type: Number,
+        required: true,
+      },
     },
   ],
   location: {

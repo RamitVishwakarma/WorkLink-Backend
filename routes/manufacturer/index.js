@@ -18,6 +18,7 @@ router.post("/signup", async (req, res) => {
       machines,
       location,
       profilePicture,
+      price,
     } = req.body;
 
     const existingManufacturer = await Manufacturer.findOne({
@@ -42,6 +43,7 @@ router.post("/signup", async (req, res) => {
         city: z.string().min(1),
         state: z.string().min(1),
       }),
+      price: z.number().int(),
     });
     // validate the data
     const validatedData = manufacturerSchema.safeParse({
@@ -51,6 +53,7 @@ router.post("/signup", async (req, res) => {
       workSector,
       machines,
       location,
+      price,
     });
     // check if the data is valid
     if (validatedData.success) {
@@ -64,6 +67,7 @@ router.post("/signup", async (req, res) => {
         machines,
         location,
         profilePicture,
+        price,
       });
       await newManufacturer.save();
       const manufacturer = await Manufacturer.findOne({
@@ -88,6 +92,7 @@ router.post("/signup", async (req, res) => {
           workSector: manufacturer.workSector,
           location: manufacturer.location,
           profilePicture: manufacturer.profilePicture,
+          machines: manufacturer.machines,
         },
       });
       res.status(201).json({ message: "Manufacturer SignUp successfull" });
@@ -152,7 +157,8 @@ router.post("/signin", async (req, res) => {
 
 router.post("/createGig", async (req, res) => {
   try {
-    const { location, skillsRequired, pay, description } = req.body;
+    const { location, skillsRequired, pay, description, workerLimit } =
+      req.body;
 
     const token = req.header("Authorization");
 
@@ -166,6 +172,7 @@ router.post("/createGig", async (req, res) => {
       skillsRequired: z.array(z.string().min(1)),
       pay: z.number().int(),
       description: z.string().min(1),
+      workerLimit: z.number().int(),
     });
 
     jwt.verify(
@@ -186,6 +193,7 @@ router.post("/createGig", async (req, res) => {
               skillsRequired,
               pay,
               description,
+              workerLimit,
             });
             if (validatedData.success) {
               const newGig = new Gig({
@@ -194,6 +202,7 @@ router.post("/createGig", async (req, res) => {
                 skillsRequired,
                 pay,
                 description,
+                workerLimit,
               });
               await newGig.save();
               const getGigId = await Gig.findOne({
