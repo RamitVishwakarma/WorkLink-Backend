@@ -133,21 +133,29 @@ router.post("/signin", async (req, res) => {
 
 router.get("/getGigs", async (req, res) => {
   try {
-    const { token } = req.headers("Authorization");
+    const token = req.header("Authorization");
     if (!token) {
       return res.status(401).json({ message: "Unauthorized Worker" });
     }
     const tokenWithoutBearer = token.split(" ")[1];
-    const decoded = jwt.verify(
+    jwt.verify(
       tokenWithoutBearer,
-      process.env.JWT_SECRET_WORKER
+      process.env.JWT_SECRET_WORKER,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Unauthorized Worker" });
+        } else {
+          const worker = await Worker.findOne({ _id: decoded.id });
+          if (!worker) {
+            return res.status(404).json({ message: "Worker not found" });
+          }
+          const gigs = await Gig.find({
+            $expr: { $lt: [{ $size: "$appliedWorkers" }, "$workerLimit"] },
+          });
+          res.status(200).json({ gigs });
+        }
+      }
     );
-    const worker = await Worker.findOne({ _id: decoded.id });
-    if (!worker) {
-      return res.status(404).json({ message: "Worker not found" });
-    }
-    const gigs = await Gig.find({});
-    res.status(200).json({ gigs });
   } catch {
     res.status(500).json({ message: "Something went down with server" });
   }

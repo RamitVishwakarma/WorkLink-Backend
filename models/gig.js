@@ -27,6 +27,16 @@ const gigSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  appliedWorkers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Worker",
+    },
+  ],
+  workerLimit: {
+    type: Number,
+    required: true,
+  },
 });
 
 const Gig = mongoose.model("Gig", gigSchema);
