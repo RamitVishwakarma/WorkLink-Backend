@@ -14,7 +14,7 @@ router.post("/signup", async (req, res) => {
 
     const existingWorker = await Worker.findOne({ email: email });
     if (existingWorker) {
-      return res.status(409).send("Worker already exists");
+      return res.status(409).json({ message: "Worker already exists" });
     }
     //creates a schema to validate
     const workerSchema = z.object({
@@ -64,12 +64,13 @@ router.post("/signup", async (req, res) => {
       // res.header("Access-Control-Expose-Headers", "Authorization");
       res.status(201).json({
         token: `Bearer ${token}`,
+        message: "Worker SignUp successfull",
       });
     } else {
-      res.status(400).send("Error validating data");
+      res.status(400).json({ message: "Error validating data" });
     }
   } catch {
-    res.status(500).send("Something went down with server");
+    res.status(500).json({ message: "Something went down with server" });
   }
 });
 
@@ -81,17 +82,17 @@ router.post("/signin", async (req, res) => {
     const emailschema = z.string().email();
     //Checking for valid data
     if (email === undefined || password === undefined) {
-      return res.status(400).send("Invalid Data provided");
+      return res.status(400).json({ message: "Invalid Data provided" });
     }
     //Checking for valid email
     if (!emailschema.safeParse(email).success) {
-      return res.status(400).send("Invalid email");
+      return res.status(400).json({ message: "Invalid email" });
     }
     //Checking for valid password and signing in
     const validWorker = await Worker.findOne({ email });
 
     if (!validWorker) {
-      return res.status(404).send("Worker not found");
+      return res.status(404).json({ message: "Worker not found" });
     }
     if (bcrypt.compareSync(password, validWorker.password)) {
       //signin the data with the secret
@@ -116,10 +117,10 @@ router.post("/signin", async (req, res) => {
         },
       });
     } else {
-      return res.status(401).send("Invalid password");
+      return res.status(401).json({ message: "Invalid password" });
     }
   } catch {
-    res.status(500).send("Something went down with server");
+    res.status(500).json({ message: "Something went down with server" });
   }
 });
 

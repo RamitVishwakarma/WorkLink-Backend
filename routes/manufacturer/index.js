@@ -4,6 +4,7 @@ const { z } = require("zod");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Manufacturer = require("../../models/manufacturer");
+const Gig = require("../../models/gig");
 
 // Signup route
 router.post("/signup", async (req, res) => {
@@ -23,7 +24,7 @@ router.post("/signup", async (req, res) => {
       companyEmail: companyEmail,
     });
     if (existingManufacturer) {
-      return res.status(409).send("Manufacturer already exists");
+      return res.status(409).json({ message: "Manufacturer already exists" });
     }
     //creates a schema to validate
     const manufacturerSchema = z.object({
@@ -80,13 +81,14 @@ router.post("/signup", async (req, res) => {
       // res.header("Access-Control-Expose-Headers", "Authorization");
       res.status(201).json({
         token: `Bearer ${token}`,
+        message: "Manufacturer SignUp successfull",
       });
-      res.status(201).send("Manufacturer SignUp successfull");
+      res.status(201).json({ message: "Manufacturer SignUp successfull" });
     } else {
-      res.status(400).send("Error validating data");
+      res.status(400).json({ message: "Error validating data" });
     }
   } catch {
-    res.status(500).send("Something went down with server");
+    res.status(500).json({ message: "Something went down with server" });
   }
 });
 
@@ -99,18 +101,18 @@ router.post("/signin", async (req, res) => {
     //Checking for valid data
     const emailValidation = emailschema.safeParse(companyEmail);
     if (!emailValidation.success) {
-      return res.status(400).send("Invalid email");
+      return res.status(400).json({ message: "Invalid email" });
     }
     //Checking for valid email
     if (companyEmail === undefined || password === undefined) {
-      return res.status(400).send("Invalid Data provided");
+      return res.status(400).json({ message: "Invalid Data provided" });
     }
     //Checking for valid password
     const validManufacturer = await Manufacturer.findOne({
       companyEmail: companyEmail,
     });
     if (!validManufacturer) {
-      return res.status(404).send("Manufacturer not found");
+      return res.status(404).json({ message: "Manufacturer not found" });
     }
     //Checking for valid password and signing in
     if (bcrypt.compareSync(password, validManufacturer.password)) {
@@ -134,10 +136,142 @@ router.post("/signin", async (req, res) => {
         },
       });
     } else {
-      res.status(401).send("Invalid password");
+      res.status(401).json({ message: "Invalid password" });
     }
   } catch {
-    res.status(500).send("Something went down with server");
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
+
+router.post("/createGig", async (req, res) => {
+  try {
+    const { location, skillsRequired, pay, description } = req.body;
+
+    const token = req.header("Authorization");
+
+    const tokenWithoutBearer = token.split(" ")[1];
+
+    const gigSchema = z.object({
+      location: z.object({
+        city: z.string().min(1),
+        state: z.string().min(1),
+      }),
+      skillsRequired: z.array(z.string().min(1)),
+      pay: z.number().int(),
+      description: z.string().min(1),
+    });
+
+    jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_MANUFACTURER,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Invalid token" });
+        } else {
+          const manufacturer = await Manufacturer.findOne({ _id: decoded.id });
+          if (!manufacturer) {
+            return res.status(404).json({ message: "Manufacturer not found" });
+          } else {
+            // validating the data
+            const validatedData = gigSchema.safeParse({
+              companyName: manufacturer.companyName,
+              location,
+              skillsRequired,
+              pay,
+              description,
+            });
+            if (validatedData.success) {
+              const newGig = new Gig({
+                companyName: manufacturer.companyName,
+                location,
+                skillsRequired,
+                pay,
+                description,
+              });
+              await newGig.save();
+              const getGigId = await Gig.findOne({
+                companyName: manufacturer.companyName,
+              });
+              await Manufacturer.findOneAndUpdate(
+                { companyEmail: manufacturer.companyEmail },
+                { $push: { gigs: getGigId._id } }
+              );
+              res.status(201).json({ message: "Gig created" });
+            } else {
+              res.status(400).json({ message: "Error validating data" });
+            }
+          }
+        }
+      }
+    );
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
+
+router.delete("/deleteGig", async (req, res) => {
+  try {
+    const { id } = req.body;
+    const token = req.header("Authorization");
+    const tokenWithoutBearer = token.split(" ")[1];
+
+    jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_MANUFACTURER,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Invalid token" });
+        } else {
+          const manufacturer = await Manufacturer.findOne({ _id: decoded.id });
+          if (!manufacturer) {
+            return res.status(404).json({ message: "Manufacturer not found" });
+          } else {
+            const gig = await Gig.findOne({ _id: id });
+            if (!gig) {
+              return res.status(404).json({ message: "Gig not found" });
+            } else {
+              await Gig.deleteOne({ _id: id });
+              await Manufacturer.findOneAndUpdate(
+                { companyEmail: manufacturer.companyEmail },
+                { $pull: { gigs: id } }
+              );
+              res.status(200).json({ message: "Gig deleted" });
+            }
+          }
+        }
+      }
+    );
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
+
+router.get("/yourGigs", async (req, res) => {
+  try {
+    const token = req.header("Authorization");
+    const tokenWithoutBearer = token.split(" ")[1];
+
+    jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_MANUFACTURER,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Invalid token" });
+        } else {
+          const manufacturer = await Manufacturer.findOne({ _id: decoded.id });
+          if (!manufacturer) {
+            return res.status(404).json({ message: "Manufacturer not found" });
+          } else {
+            const gigs = await Gig.find({
+              companyName: manufacturer.companyName,
+            });
+            res.status(200).json({ gigs });
+          }
+        }
+      }
+    );
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
   }
 });
 
