@@ -4,6 +4,7 @@ const { z } = require("zod");
 const Worker = require("../../models/Worker");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const Gig = require("../../models/gig");
 
 // Signup route
 router.post("/signup", async (req, res) => {
@@ -125,6 +126,24 @@ router.post("/signin", async (req, res) => {
     } else {
       return res.status(401).json({ message: "Invalid password" });
     }
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
+
+router.get("/getGigs", async (req, res) => {
+  try {
+    const { token } = req.headers("Authorization");
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized Worker" });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_WORKER);
+    const worker = await Worker.findOne({ _id: decoded.id });
+    if (!worker) {
+      return res.status(404).json({ message: "Worker not found" });
+    }
+    const gigs = await Gig.find({});
+    res.status(200).json({ gigs });
   } catch {
     res.status(500).json({ message: "Something went down with server" });
   }
