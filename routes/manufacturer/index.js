@@ -18,7 +18,6 @@ router.post("/signup", async (req, res) => {
       machines,
       location,
       profilePicture,
-      price,
     } = req.body;
 
     const existingManufacturer = await Manufacturer.findOne({
@@ -37,13 +36,13 @@ router.post("/signup", async (req, res) => {
         z.object({
           name: z.string().min(1),
           isAvailable: z.boolean().default(true),
+          price: z.number().int(),
         })
       ),
       location: z.object({
         city: z.string().min(1),
         state: z.string().min(1),
       }),
-      price: z.number().int(),
     });
     // validate the data
     const validatedData = manufacturerSchema.safeParse({
@@ -53,7 +52,6 @@ router.post("/signup", async (req, res) => {
       workSector,
       machines,
       location,
-      price,
     });
     // check if the data is valid
     if (validatedData.success) {
@@ -67,7 +65,6 @@ router.post("/signup", async (req, res) => {
         machines,
         location,
         profilePicture,
-        price,
       });
       await newManufacturer.save();
       const manufacturer = await Manufacturer.findOne({
