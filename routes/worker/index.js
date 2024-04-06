@@ -137,7 +137,11 @@ router.get("/getGigs", async (req, res) => {
     if (!token) {
       return res.status(401).json({ message: "Unauthorized Worker" });
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_WORKER);
+    const tokenWithoutBearer = token.split(" ")[1];
+    const decoded = jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_WORKER
+    );
     const worker = await Worker.findOne({ _id: decoded.id });
     if (!worker) {
       return res.status(404).json({ message: "Worker not found" });
