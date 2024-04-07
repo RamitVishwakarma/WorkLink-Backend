@@ -164,4 +164,131 @@ router.get("/getGigs", async (req, res) => {
   }
 });
 
+router.get("/getProfile", async (req, res) => {
+  try {
+    const token = req.header("Authorization");
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized Worker" });
+    }
+    const tokenWithoutBearer = token.split(" ")[1];
+    jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_WORKER,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Unauthorized Worker" });
+        } else {
+          const worker = await Worker.findOne({ _id: decoded.id });
+          if (!worker) {
+            return res.status(404).json({ message: "Worker not found" });
+          }
+          res.status(200).json({
+            worker: {
+              name: worker.name,
+              email: worker.email,
+              skills: worker.skills,
+              location: worker.location,
+              profilePicture: worker.profilePicture,
+            },
+          });
+        }
+      }
+    );
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
+
+router.post("/editProfile", async (req, res) => {
+  try {
+    const token = req.header("Authorization");
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized Worker" });
+    }
+    const tokenWithoutBearer = token.split(" ")[1];
+    jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_WORKER,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Unauthorized Worker" });
+        } else {
+          const worker = await Worker.findOne({ _id: decoded.id });
+          if (!worker) {
+            return res.status(404).json({ message: "Worker not found" });
+          }
+          const { name, email, skills, location, profilePicture } = req.body;
+          if (name) {
+            worker.name = name;
+          }
+          if (email) {
+            worker.email = email;
+          }
+          if (skills) {
+            worker.skills = skills;
+          }
+          if (location) {
+            worker.location = location;
+          }
+          if (profilePicture) {
+            worker.profilePicture = profilePicture;
+          }
+          await worker.save();
+          res.status(200).json({
+            worker: {
+              name: worker.name,
+              email: worker.email,
+              skills: worker.skills,
+              location: worker.location,
+              profilePicture: worker.profilePicture,
+            },
+          });
+        }
+      }
+    );
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
+
+router.post("/applyToGig", async (req, res) => {
+  try {
+    const token = req.header("Authorization");
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized Worker" });
+    }
+    const tokenWithoutBearer = token.split(" ")[1];
+    jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_WORKER,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Unauthorized Worker" });
+        } else {
+          const worker = await Worker.findOne({ _id: decoded.id });
+          if (!worker) {
+            return res.status(404).json({ message: "Worker not found" });
+          }
+          const { gigId } = req.body;
+          const gig = await Gig.findOne({ _id: gigId });
+          if (!gig) {
+            return res.status(404).json({ message: "Gig not found" });
+          }
+          if (gig.appliedWorkers.includes(worker._id)) {
+            return res.status(409).json({ message: "Worker already applied" });
+          }
+          if (gig.appliedWorkers.length >= gig.workerLimit) {
+            return res.status(409).json({ message: "Worker limit reached" });
+          }
+          gig.appliedWorkers.push(worker._id);
+          await gig.save();
+          res.status(200).json({ message: "Applied to gig" });
+        }
+      }
+    );
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
+
 module.exports = router;

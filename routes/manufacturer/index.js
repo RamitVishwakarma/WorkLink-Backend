@@ -288,7 +288,7 @@ router.get("/yourGigs", async (req, res) => {
   }
 });
 
-router.put("/toggleMachineAvailability", async (req, res) => {
+router.post("/toggleMachineAvailability", async (req, res) => {
   try {
     const { machineId } = req.body;
     const token = req.header("Authorization");

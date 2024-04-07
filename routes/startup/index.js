@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const StartUp = require("../../models/Startup");
 const Gig = require("../../models/gig");
 const Startup = require("../../models/Startup");
+const Manufacturer = require("../../models/manufacturer");
 
 // Signup route
 router.post("/signup", async (req, res) => {
@@ -267,6 +268,41 @@ router.get("/yourGigs", async (req, res) => {
               companyName: startup.companyName,
             });
             res.status(200).json({ gigs });
+          }
+        }
+      }
+    );
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
+
+router.get("/showMachines", async (req, res) => {
+  try {
+    const token = req.header("Authorization");
+    const tokenWithoutBearer = token.split(" ")[1];
+
+    jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_STARTUP,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Invalid token" });
+        } else {
+          const startup = await StartUp.findOne({ _id: decoded.id });
+          if (!startup) {
+            return res.status(404).json({ message: "Startup not found" });
+          } else {
+            const manufacturers = await Manufacturer.find({});
+            const machines = manufacturers.map((manufacturer) => {
+              const machineData = {
+                companyName: manufacturer.companyName,
+                location: manufacturer.location,
+                machines: manufacturer.machines,
+              };
+              return machineData;
+            });
+            res.status(200).json({ machines });
           }
         }
       }
