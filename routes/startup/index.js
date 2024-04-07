@@ -312,4 +312,45 @@ router.get("/showMachines", async (req, res) => {
   }
 });
 
+router.post("/applyToMachines", async (req, res) => {
+  try {
+    const { machineId } = req.body;
+    const token = req.header("Authorization");
+    const tokenWithoutBearer = token.split(" ")[1];
+
+    jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_STARTUP,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Invalid token" });
+        } else {
+          const startup = await StartUp.findOne({ _id: decoded.id });
+          if (!startup) {
+            return res.status(404).json({ message: "Startup not found" });
+          } else {
+            const manufacturers = await Manufacturer.find({});
+            const machine = manufacturers.map((manufacturer) => {
+              const machineData = manufacturer.machines.filter(
+                (machine) => machine._id == machineId
+              );
+              return machineData;
+            });
+            if (machine.length === 0) {
+              return res.status(404).json({ message: "Machine not found" });
+            } else {
+              await Manufacturer.findOneAndUpdate(
+                { "machines._id": machineId },
+                { $push: { "machines.$.startupApplied": startup._id } }
+              );
+              res.status(200).json({ message: "Applied to machine" });
+            }
+          }
+        }
+      }
+    );
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
 module.exports = router;

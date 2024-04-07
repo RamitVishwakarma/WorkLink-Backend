@@ -31,6 +31,12 @@ const manufacturerSchema = new mongoose.Schema({
         type: Number,
         required: true,
       },
+      startupApplied: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "StartUp",
+        },
+      ],
     },
   ],
   location: {
