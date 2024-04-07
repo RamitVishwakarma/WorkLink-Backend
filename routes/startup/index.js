@@ -121,7 +121,6 @@ router.post("/signin", async (req, res) => {
           expiresIn: "30d",
         }
       );
-      console.log(" error Here");
       res.header("Authorization", `Bearer ${token}`);
       res.header("Access-Control-Expose-Headers", "Authorization");
       res.status(200).json({

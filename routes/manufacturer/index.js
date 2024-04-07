@@ -288,4 +288,45 @@ router.get("/yourGigs", async (req, res) => {
   }
 });
 
+router.put("/toggleMachineAvailability", async (req, res) => {
+  try {
+    const { machineId } = req.body;
+    const token = req.header("Authorization");
+    const tokenWithoutBearer = token.split(" ")[1];
+
+    jwt.verify(
+      tokenWithoutBearer,
+      process.env.JWT_SECRET_MANUFACTURER,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Invalid token" });
+        } else {
+          const manufacturer = await Manufacturer.findOne({ _id: decoded.id });
+          if (!manufacturer) {
+            return res.status(404).json({ message: "Manufacturer not found" });
+          } else {
+            let isAvailable;
+            manufacturer.machines.forEach((machine) => {
+              if (machine._id == machineId) {
+                isAvailable = machine.isAvailable;
+                console.log(isAvailable);
+              }
+            });
+            await Manufacturer.findOneAndUpdate(
+              { _id: decoded.id, "machines._id": machineId },
+              { $set: { "machines.$.isAvailable": !isAvailable } }
+            );
+            res.status(200).json({
+              message: "Machine availability toggled",
+              data: await Manufacturer.findOne({ _id: decoded.id }),
+            });
+          }
+        }
+      }
+    );
+  } catch {
+    res.status(500).json({ message: "Something went down with server" });
+  }
+});
+
 module.exports = router;

@@ -164,45 +164,4 @@ router.get("/getGigs", async (req, res) => {
   }
 });
 
-router.put("/applyToGig/:id", async (req, res) => {
-  try {
-    const token = req.header("Authorization");
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized Worker" });
-    }
-    const tokenWithoutBearer = token.split(" ")[1];
-    jwt.verify(
-      tokenWithoutBearer,
-      process.env.JWT_SECRET_WORKER,
-      async (err, decoded) => {
-        if (err) {
-          return res.status(401).json({ message: "Unauthorized Worker" });
-        } else {
-          const worker = await Worker.findOne({ _id: decoded.id });
-          if (!worker) {
-            return res.status(404).json({ message: "Worker not found" });
-          }
-          const gig = await Gig.findOne({ _id: req.params.id });
-          if (!gig) {
-            return res.status(404).json({ message: "Gig not found" });
-          }
-          if (gig.appliedWorkers.includes(worker._id)) {
-            return res.status(409).json({ message: "Already applied" });
-          }
-          if (gig.appliedWorkers.length >= gig.workerLimit) {
-            return res.status(409).json({ message: "Worker limit reached" });
-          }
-          await Gig.findOneAndUpdate(
-            { _id: req.params.id },
-            { $push: { appliedWorkers: worker._id } }
-          );
-          res.status(200).json({ message: "Applied to gig" });
-        }
-      }
-    );
-  } catch {
-    res.status(500).json({ message: "Something went down with server" });
-  }
-});
-
 module.exports = router;
