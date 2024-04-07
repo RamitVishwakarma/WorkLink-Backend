@@ -341,7 +341,7 @@ router.post("/applyToMachines", async (req, res) => {
             } else {
               await Manufacturer.findOneAndUpdate(
                 { "machines._id": machineId },
-                { $push: { "machines.$.startupApplied": startup._id } }
+                { $addToSet: { "machines.$.startupApplied": startup._id } }
               );
               res.status(200).json({ message: "Applied to machine" });
             }
